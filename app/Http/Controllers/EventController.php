@@ -710,6 +710,10 @@ public function updatePaymentStatus(Request $request, $id)
         'payment_status' => $event->payment_status
     ], 200);
 }
-
+public function eventsByMonth($month)
+{
+    $events = Event::whereMonth('date', $month)->get();
+    return response()->json($events);
+}
     
 }
