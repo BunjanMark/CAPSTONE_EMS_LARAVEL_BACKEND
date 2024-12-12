@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Event;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use App\Http\Requests\StoreEventRequest;
+
+class EventController extends Controller
+{
+    // Method 1: Using Form Request Validation
+    public function storeWithFormRequest(StoreEventRequest $request)
+    {
+        $validatedData = $request->validated();
+
+        $event = Event::create([
+            'name' => $validatedData['eventName'],
+            'type' => $validatedData['eventType'],
+            'date' => $validatedData['eventDate'],
+            'time' => $validatedData['eventTime'],
+            'location' => $validatedData['eventLocation'],
+            'description' => $validatedData['description'],
+            'cover_photo' => $validatedData['coverPhoto'] ?? null,
+        ]);
+
+        return response()->json($event, 201);
+    }
+
+    // Method 2: Using Model Binding with inline validation
+    public function storeWithModelBinding(Request $request, Event $event)
+    {
+        $validatedData = $request->validate([
+            'eventName' => 'required|string|max:255',
+            'eventType' => 'required|string',
+            'eventDate' => 'required|date',
+            'eventTime' => 'required|date_format:H:i',
+            'eventLocation' => 'required|string',
+            'description' => 'required|string',
+            'coverPhoto' => 'nullable|url',
+        ]);
+
+        $event->fill([
+            'name' => $validatedData['eventName'],
+            'type' => $validatedData['eventType'],
+            'date' => $validatedData['eventDate'],
+            'time' => $validatedData['eventTime'],
+            'location' => $validatedData['eventLocation'],
+            'description' => $validatedData['description'],
+            'cover_photo' => $validatedData['coverPhoto'] ?? null,
+        ])->save();
+
+        return response()->json($event, 201);
+    }
+
+    // Method 3: Direct Store Method with Minimal Validation
+    public function storeDirect(Request $request)
+    {
+        $validatedData = $request->only([
+            'eventName', 'eventType', 'eventDate', 'eventTime', 
+            'eventLocation', 'description', 'coverPhoto'
+        ]);
+
+        $rules = [
+            'eventName' => 'sometimes|required|string|max:255',
+            'eventType' => 'sometimes|required|string',
+            'eventDate' => 'sometimes|required|date',
+            'eventTime' => 'sometimes|required|date_format:H:i',
+            'eventLocation' => 'sometimes|required|string',
+            'description' => 'sometimes|required|string',
+            'coverPhoto' => 'nullable|url',
+        ];
+
+        $validator = \Validator::make($validatedData, $rules);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $event = Event::create([
+            'name' => $validatedData['eventName'] ?? 'Default Event Name',
+            'type' => $validatedData['eventType'] ?? 'General',
+            'date' => $validatedData['eventDate'] ?? now()->toDateString(),
+            'time' => $validatedData['eventTime'] ?? now()->toTimeString(),
+            'location' => $validatedData['eventLocation'] ?? 'Unknown Location',
+            'description' => $validatedData['description'] ?? 'No description available',
+            'cover_photo' => $validatedData['coverPhoto'] ?? null,
+        ]);
+
+        return response()->json($event, 201);
+    }
+
+    // Method to fetch all events
+    public function index()
+    {
+        try {
+            $events = Event::all();
+            return response()->json($events, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+}
