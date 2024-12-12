@@ -29,3 +29,4 @@ Route::post('/password/update', [ResetPasswordController::class, 'update'])->nam
 Route::get('/password/success', function () {
     return view('auth.password-success');
 })->name('password.success');
+

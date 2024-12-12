@@ -20,7 +20,9 @@ class Kernel extends HttpKernel
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
         \App\Http\Middleware\TrustProxies::class,
         \Fruitcake\Cors\HandleCors::class, // Add this line for CORS
+
         \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+
     ];
 
     /**

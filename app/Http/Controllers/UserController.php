@@ -11,41 +11,34 @@ class UserController extends Controller
 {
 
     public function login(Request $request)
-{
-    $request->validate([
-        'username' => 'required|string',
-        'password' => 'required|string',
-    ]);
-
-    \Log::info('Login attempt', ['username' => $request->username]);
-
-    // Trim the password input
-    $trimmedPassword = trim($request->password);
-
-    $user = User::where('username', $request->username)->first();
+    {
+        try {
+            $request->validate([
+                'username' => 'required|string',
+                'password' => 'required|string',
+            ]);
     
-    if (!$user) {
-        \Log::warning('User not found', ['username' => $request->username]);
-        return response()->json(['error' => 'Invalid credentials'], 401);
-    }
+            $trimmedPassword = trim($request->password);
+            $user = User::where('username', $request->username)->first();
 
-    \Log::info('Checking password for user', [
-        'username' => $request->username,
-        'input_password' => $trimmedPassword,
-        'hashed_password' => $user->password
-    ]);
-
-    // Check the trimmed password against the hashed password
-    if (!Hash::check($trimmedPassword, $user->password)) {
-        \Log::warning('Password check failed', ['username' => $request->username]);
-        return response()->json(['error' => 'Invalid credentials'], 401);
-    }
-
-    // Return success response
-    return response()->json(['message' => 'Login successful', 'user' => $user], 200);
-}
-
+            if (!$user) {
+                \Log::error('User not found', ['username' => $request->username]);
+                return response()->json(['error' => 'Invalid credentials'], 401);
+            }
     
+            if (!$user || !Hash::check($trimmedPassword, $user->password)) {
+                \Log::warning('Invalid login credentials', ['username' => $request->username]);
+                return response()->json(['error' => 'The provided credentials are incorrect.'], 401);
+            }
+    
+            // Authentication successful, return user data or token
+            return response()->json(['message' => 'Login successful', 'user' => $user], 200);
+    
+        } catch (\Exception $e) {
+            \Log::error('Login error', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Server error, please try again later.'], 500);
+        }
+    }    
     
     
 
