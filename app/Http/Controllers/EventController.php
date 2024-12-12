@@ -28,6 +28,13 @@ class EventController extends Controller
     return response()->json($events);
 }
 
+public function eventsByMonth($month)
+{
+    $events = Event::whereMonth('date', $month)->get();
+    return response()->json($events);
+}
+
+
  public function eventsForDay($date)
 {
     $events = Event::whereDate('date', $date)->get();
@@ -129,22 +136,22 @@ public function store(Request $request)
         //         $equipment->save();
         //     }
         // }
-        foreach ($validatedData['packages'] as $packageId) {
-            $package = Package::find($packageId);
-            $services = json_decode($package->services, true);
+        // foreach ($validatedData['packages'] as $packageId) {
+        //     $package = Package::find($packageId);
+        //     $services = json_decode($package->services, true);
         
-            foreach ($services as $serviceId) {
-                $service = Service::find($serviceId);
-                $AccountRoledata = AccountRole::where('user_id', $service->user_id)->first();
+        //     foreach ($services as $serviceId) {
+        //         $service = Service::find($serviceId);
+        //         $AccountRoledata = AccountRole::where('user_id', $service->user_id)->first();
         
-                $equipment = Equipment::create([
-                    'event_id' => $event->id,
-                    'service_id' => $serviceId,
-                    'user_id' => $service->user_id,
-                    'account_role_id' => $AccountRoledata ? $AccountRoledata->id : null,
-                ]);
-            }
-        }
+        //         $equipment = Equipment::create([
+        //             'event_id' => $event->id,
+        //             'service_id' => $serviceId,
+        //             'user_id' => $service->user_id,
+        //             'account_role_id' => $AccountRoledata ? $AccountRoledata->id : null,
+        //         ]);
+        //     }
+        // }
 
        // Add guest to the event
        $guests = [];
@@ -710,10 +717,6 @@ public function updatePaymentStatus(Request $request, $id)
         'payment_status' => $event->payment_status
     ], 200);
 }
-public function eventsByMonth($month)
-{
-    $events = Event::whereMonth('date', $month)->get();
-    return response()->json($events);
-}
+
     
 }
