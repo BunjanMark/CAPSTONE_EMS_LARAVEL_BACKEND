@@ -19,6 +19,7 @@ return new class extends Migration
             $table->boolean('packageType')->default(1);  
             $table->json('services');
             $table->decimal('totalPrice', 10, 2);
+            $table->integer('pax')->nullable();
             $table->longText('coverPhoto')->nullable(); // Ensure this is a string and nullable and 2000 characters max$table->date('packageCreatedDate');
             $table->timestamps();
         });

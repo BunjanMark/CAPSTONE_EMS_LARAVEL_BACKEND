@@ -12,26 +12,22 @@ class PackageController extends Controller
 {
     // Method to fetch all packages
     public function index()
-{
-    try {
-        // Retrieve all packages
-        $packages = Package::all();
-
-        // Decode the 'services' JSON field for each package
-        foreach ($packages as $package) {
-            $package->services = json_decode($package->services, true); // Decode JSON to an array
+    {
+        try {
+            // Eager load 'services' relationship for all packages
+            $packages = Package::with('services')->get();
+    
+            // Return the result as JSON with a 200 status code
+            return response()->json($packages, 200);
+        } catch (\Exception $e) {
+            // Handle errors and return a 500 status code with an error message
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
         }
-        $packages = Package::with('services')->get(); // eager load services
-    return response()->json($packages);
-
-        return response()->json($packages, 200); // Return the updated packages with 200 status
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-        ], 500);
     }
-}
+    
 public function update(Request $request, $id)
 {
     DB::beginTransaction(); // Start the transaction
@@ -48,12 +44,15 @@ public function update(Request $request, $id)
         }
 
         // Validate the incoming data
+        // Validate the incoming data
         $validatedData = $request->validate([
             'packageName' => 'nullable|string|max:255',
             'eventType' => 'nullable|string',
             'services' => 'nullable|array', // Validate services as an array
+            'services' => 'nullable|array', // Validate services as an array
             'services.*' => 'integer', // Ensure each service is an integer
             'totalPrice' => 'nullable|numeric|min:1',
+            'pax' => 'nullable|numeric|min:1',
             'coverPhoto' => 'nullable|url', // Ensure it's a valid URL
         ]);
 
@@ -67,11 +66,12 @@ public function update(Request $request, $id)
             'packageName' => $validatedData['packageName'] ?? $package->packageName,
             'eventType' => $validatedData['eventType'] ?? $package->eventType,
             'totalPrice' => $validatedData['totalPrice'] ?? $package->totalPrice,
+            'pax' => $validatedData['pax'] ?? $package->pax,
             'coverPhoto' => $validatedData['coverPhoto'] ?? $package->coverPhoto,
             'services' => json_encode($validatedData['services']), // Update the services as a JSON-encoded string
         ]);
 
-        // Sync the `package_services` pivot table
+        // Sync the package_services pivot table
         if (isset($validatedData['services']) && count($validatedData['services']) > 0) {
             // Synchronize the related services in the pivot table
             $package->services()->sync($validatedData['services']); // Automatically handles updates
@@ -101,8 +101,6 @@ public function update(Request $request, $id)
     }
 }
 
-
-
     // Method to store a new package
     public function store(Request $request)
 {
@@ -117,6 +115,7 @@ public function update(Request $request, $id)
             'services' => 'nullable|array', // Make services nullable
             'services.*' => 'integer',
             'totalPrice' => 'required|numeric|min:1',
+            'pax' => 'required|integer|min:1',
             'coverPhoto' => 'nullable|url', // Ensure it's a valid URL
  
         ]);
@@ -133,6 +132,7 @@ public function update(Request $request, $id)
             'eventType' => $validatedData['eventType'],
             'packageType' => $packageType,  // Assign the correct package type
             'totalPrice' => $validatedData['totalPrice'],
+            'pax' => $validatedData['pax'],
             'coverPhoto' => $validatedData['coverPhoto'],
             'services' => json_encode($validatedData['services']),
         ]);

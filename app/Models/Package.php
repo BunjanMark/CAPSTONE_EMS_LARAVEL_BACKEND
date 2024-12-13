@@ -21,6 +21,7 @@ class Package extends Model
         'packageType',
         'services',
         'totalPrice',
+        'pax',
         'coverPhoto',
     ];
 
