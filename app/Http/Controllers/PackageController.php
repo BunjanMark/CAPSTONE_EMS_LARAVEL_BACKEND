@@ -120,11 +120,10 @@ public function update(Request $request, $id)
  
         ]);
 
-        // Ensure that 'services' is set to an empty array if not provided
         if (!isset($validatedData['services'])) {
-            $validatedData['services'] = []; // Default to an empty array if services are not provided
+            $validatedData['services'] = [];
         }
-        $packageType = $validatedData['packageType'] ?? true; // Default to 'Pre-defined' if not provided
+        $packageType = $validatedData['packageType'] ?? true;
 
         // Create the package in the database
         $package = Package::create([

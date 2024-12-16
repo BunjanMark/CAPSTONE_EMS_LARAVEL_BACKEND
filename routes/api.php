@@ -104,6 +104,7 @@ Route::get('/admin/events/{id}/packages', [EventPackageController::class, 'getEv
 Route::get('/admin/events/{eventId}/user/{userId}', [EventController::class, 'getServiceProviderInfoByUserId']);
 Route::get('/admin/events/{id}/user', [EventController::class, 'getUserBookingEvents'])->middleware('auth');
 Route::put('/admin/events/bookings/{eventId}', [EventController::class, 'updateEventStatus']);
+Route::put('/admin/events/bookings/decline/{eventId}', [EventController::class, 'declineEventStatus']);
 Route::put('/admin/events/bookings/complete/{eventId}', [EventController::class, 'updateEventStatusComplete']); //to complete
 Route::get('/events/month/{month}', [EventController::class, 'eventsByMonth']); 
 Route::put('/admin/events/{id}/payment-status', [EventController::class, 'updatePaymentStatus']);
@@ -147,7 +148,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-equipment', [EquipmentController::class, 'myEquipment']);
     Route::middleware('auth:api')->post('/equipment', [EquipmentController::class, 'store']);
 
-
+    // geteventswithmyservices
+    Route::get('/events/my-services', [EventController::class, 'getEventsWithMyServices']);
 
 
 

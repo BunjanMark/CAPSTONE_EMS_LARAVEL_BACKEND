@@ -278,7 +278,7 @@ public function fetchEventsByType(Request $request)
 }
 
 
-public function getEventsWithMyServices(Request $request)
+public function getEventsWithMyServices1(Request $request)
 {
     $userId = Auth::id();
     $myServices = Service::where('user_id', $userId)->pluck('id');
@@ -591,6 +591,25 @@ public function getServiceProviederName($eventId, $userId)
         return response()->json($events);
     }
 
+
+    public function declineEventStatus(Request $request, $eventId)
+{
+    try {
+        $event = Event::find($eventId);
+
+        if (!$event) {
+            return response()->json(['error' => 'Event not found'], 404);
+        }
+
+        $event->update(['status' => 'declined']);
+
+        return response()->json(['message' => 'Event has been declined'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
     public function updateEventStatus(Request $request, $eventId)
     {
         try {
@@ -717,6 +736,47 @@ public function updatePaymentStatus(Request $request, $id)
         'payment_status' => $event->payment_status
     ], 200);
 }
+
+public function getEventsWithMyServices()
+{
+    try {
+        // Ensure user is authenticated
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized. Please log in.'], 401);
+        }
+
+        // Check if the user is a service provider
+        if ($user->role_id !== 3) { // Assuming role_id 3 corresponds to service providers
+            return response()->json(['message' => 'Access restricted to service providers only.'], 403);
+        }
+
+        // Retrieve events where the user's services are included
+        $events = DB::table('event_services_providers')
+        ->join('events', 'event_services_providers.event_id', '=', 'events.id')
+        ->join('services', 'event_services_providers.service_id', '=', 'services.id')
+        ->where('event_services_providers.user_id', $user->id)
+        ->select(
+            'events.*', // Select all columns from the events table
+            'services.id as service_id',
+            'services.serviceName as service_name',
+            'event_services_providers.package_id as package_id'
+        )
+        ->get();
+    
+
+        // Return the result
+        return response()->json(['events' => $events], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
 
     
 }
