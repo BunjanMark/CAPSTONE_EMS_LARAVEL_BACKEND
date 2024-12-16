@@ -68,6 +68,41 @@ class EmailVerificationController extends Controller
         // return response()->json(['message' => 'Route accessed successfully']);    
     }
 
+    public function resendCode(Request $request)
+{
+    try {
+        $request->validate([
+            'email' => 'required|email|exists:email_verifications,email',
+        ]);
+
+        $existingVerification = DB::table('email_verifications')
+            ->where('email', $request->email)
+            ->latest('created_at')
+            ->first();
+
+        if ($existingVerification && $existingVerification->expires_at > now()) {
+            throw new \Exception('A verification code has already been sent and has not expired yet.');
+        }
+
+        $newVerificationCode = str_random(6); // generate a new random code
+        DB::table('email_verifications')->insert([
+            'email' => $request->email,
+            'verification_code' => $newVerificationCode,
+            'expires_at' => now()->addMinutes(30), // expires in 30 minutes
+        ]);
+
+        // Send the new verification code to the user's email
+        // You can use a mail service like Mailgun or Laravel's built-in mail system
+        // For example:
+        // Mail::to($request->email)->send(new VerificationCodeEmail($newVerificationCode));
+
+        return response(["message" => "Verification code resent successfully"], 200);
+    } catch (\Throwable $th) {
+        //throw $th;
+        return response(["message" => $th->getMessage()], 400);
+    }
+}
+
 
     public function verifyCode1(Request $request)
     {

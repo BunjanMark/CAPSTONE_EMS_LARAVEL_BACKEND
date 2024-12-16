@@ -8,6 +8,7 @@ use App\Console\Commands\ServeProject;
 use Illuminate\Console\Scheduling\Schedule;
 use App\Console\Commands\SendEventReminders;
 use Illuminate\Support\Facades\Storage;
+use App\Console\Commands\UpdateEventStatus;
 
 
 Artisan::command('inspire', function () {
@@ -28,8 +29,10 @@ Artisan::command('serve-project {host?} {port?}', function ($host = 'localhost',
     // Call ServeProject with host and port parameters
     $this->call(ServeProject::class, ['host' => $host, 'port' => $port]);
 })->purpose('Serve project at specified host and port');
-
-
+Artisan::command('app:update-event-status', function () {
+    $this->call(UpdateEventStatus::class);
+    // $this->info('Event statuses updated successfully.');
+})->purpose('Update event statuses scheduled for two days from now');
 
 $schedule = app(Schedule::class);
 
@@ -49,3 +52,7 @@ $schedule->command('event:send-reminders')->dailyAt('16:15')->emailOutputOnFailu
 //     });
 $schedule->command('event:send-reminders-10-hours')->everySixHours(0)->emailOutputOnFailure('eventwisecapstone@gmail.com'); // This will run every minute
 $schedule->command('event:send-reminders-1-day')->dailyAt('14:46')->emailOutputOnFailure('eventwisecapstone@gmail.com'); // This will run every minute
+// Schedule the UpdateEventStatus command to run daily at 12:00 AM
+$schedule->command('app:update-event-status')
+    ->dailyAt('13:47')
+    ->emailOutputOnFailure('eventwisecapstone@gmail.com');
