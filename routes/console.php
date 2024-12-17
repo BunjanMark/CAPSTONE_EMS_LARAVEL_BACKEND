@@ -54,5 +54,5 @@ $schedule->command('event:send-reminders-10-hours')->everySixHours(0)->emailOutp
 $schedule->command('event:send-reminders-1-day')->dailyAt('14:46')->emailOutputOnFailure('eventwisecapstone@gmail.com'); // This will run every minute
 // Schedule the UpdateEventStatus command to run daily at 12:00 AM
 $schedule->command('app:update-event-status')
-    ->everyFiveSeconds()
+    ->everyMinute()
     ->emailOutputOnFailure('eventwisecapstone@gmail.com');
