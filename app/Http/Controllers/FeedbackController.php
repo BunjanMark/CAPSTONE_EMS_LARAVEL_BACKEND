@@ -28,6 +28,9 @@ class FeedbackController extends Controller
          // Retrieve the event
          $event = Event::findOrFail($eventId);
      
+         // Retrieve the guest
+         $guest = Guest::findOrFail($guestId); // Assuming Guest is the model for your guests table
+     
          // Retrieve services associated with the event, using caching for efficiency
          $services = Cache::remember("event_services_{$eventId}", 60, function () use ($eventId) {
              return DB::table('services')
@@ -40,7 +43,7 @@ class FeedbackController extends Controller
          });
      
          // Pass data to the view
-         return view('feedback.form', compact('eventId', 'guestId', 'event', 'services'));
+         return view('feedback.form', compact('eventId', 'guestId', 'event', 'guest', 'services'));
      }
      
      

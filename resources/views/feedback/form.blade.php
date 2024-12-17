@@ -5,15 +5,24 @@
     <div id="services">
         <!-- The services will be dynamically loaded here -->
     </div>
-    <h1 class="text-center" style="color: #DAA520; font-family: 'Arial', sans-serif; margin-bottom: 20px;">Feedback for Event: {{ $event->name ?? 'Unknown Event' }}</h1>
-
+    <h1 class="text-center" 
+    style="color: #DAA520; 
+           font-family: 'Arial', sans-serif; 
+           font-size: 2.5rem; 
+           font-weight: bold; 
+           margin-bottom: 20px; 
+           text-transform: uppercase; 
+           letter-spacing: 2px; 
+           text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);">
+    Feedback for Event: {{ $event->name ?? 'Unknown Event' }}  
+    -- Guest: {{ $guest->GuestName }}
+</h1>
 
     <form id="feedbackForm" style="width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center;">
         @csrf
         <input type="hidden" name="event_id" value="{{ $eventId }}">
-        <input type="hidden" name="customer_id" value="">
-        <input type="hidden" name="customer_name" value="">
-
+        <input type="hidden" name="customer_id" value="{{ $guestId }}">
+        <input type="hidden" name="customer_name" value="{{ $guestId }}">
         <!-- Feedback for dynamically included categories -->
         @if (in_array('Catering', $services))
             <div class="form-group" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
@@ -116,20 +125,12 @@
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const eventId = 4;  // Replace with dynamic logic
-    const guestId = 1;  // Replace with dynamic logic
-    const guestName = "John Doe";  // Replace with dynamic logic
+    const eventId = "{{ $event->id }}";  // Dynamic eventId from backend
+    const guestId = "{{ $guest->id }}";  // Dynamic guestId from backend
+    const guestName = "{{ $guest->GuestName }}";  // Dynamic guest name from backend
 
-    console.log("Event ID:", eventId);
-    console.log("Guest ID:", guestId);
-    console.log("Guest Name:", guestName);
-
-
-    // Set dynamic values in the form
     document.querySelector('input[name="event_id"]').value = eventId;
     document.querySelector('input[name="customer_id"]').value = guestId;
-    document.querySelector('input[name="customer_name"]').value = guestName;
 
     document.getElementById("submitFeedback").addEventListener("click", function() {
         const feedbackData = {
@@ -152,6 +153,7 @@ document.addEventListener("DOMContentLoaded", function() {
             customer_name: guestName,
             customer_id: guestId,
         };
+
         console.log("Feedback Data:", feedbackData);
 
         // Submit the feedback data to the server #TODO should be dynamic
