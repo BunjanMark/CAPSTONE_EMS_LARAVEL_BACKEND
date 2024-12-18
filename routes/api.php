@@ -150,6 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // geteventswithmyservices
     Route::get('/events/my-services', [EventController::class, 'getEventsWithMyServices']);
+    Route::get('/events/my-services/unique', [EventController::class, 'getUniqueEventsWithMyServices']);
 
 
 
