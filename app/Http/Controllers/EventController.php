@@ -634,7 +634,27 @@ public function getServiceProviederName($eventId, $userId)
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }   
-
+    public function updateEventStatusDisabled(Request $request, $eventId)
+    {
+        try {
+            // Find the event by ID
+            $event = Event::find($eventId);
+    
+            if (!$event) {
+                // Return an error response if the event is not found
+                return response()->json(['error' => 'Event not found'], 404);
+            }
+    
+            // Update the event status to 'disabled'
+            $event->update(['status' => 'disabled']);
+    
+            return response()->json(['message' => 'Event status updated to disabled'], 200);
+        } catch (\Exception $e) {
+            // Return an error response if something goes wrong
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
     public function updateEventStatusComplete(Request $request, $eventId)
     {
         try {
