@@ -746,10 +746,11 @@ public function getEventsWithMyServices()
             return response()->json(['message' => 'Unauthorized. Please log in.'], 401);
         }
 
-        // Check if the user is a service provider
-        if ($user->role_id !== 3) { // Assuming role_id 3 corresponds to service providers
-            return response()->json(['message' => 'Access restricted to service providers only.'], 403);
+        // Check if the user is either a service provider or has role_id 1
+        if (!in_array($user->role_id, [1, 3])) { // Allow roles 1 and 3
+            return response()->json(['message' => 'Access restricted to authorized roles only.'], 403);
         }
+
 
         // Retrieve events where the user's services are included
         $events = DB::table('event_services_providers')
