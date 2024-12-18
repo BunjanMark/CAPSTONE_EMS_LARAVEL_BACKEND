@@ -737,7 +737,7 @@ public function updatePaymentStatus(Request $request, $id)
     ], 200);
 }
 
-public function getEventsWithMyServices()
+public function getEventsWithMyServicesForFeedback()
 {
     try {
         // Ensure user is authenticated
@@ -777,7 +777,7 @@ public function getEventsWithMyServices()
     }
 }
 
-public function getUniqueEventsWithMyServices()
+public function getEventsWithMyServicesUnique()
 {
     try {
         // Ensure user is authenticated
@@ -791,22 +791,21 @@ public function getUniqueEventsWithMyServices()
             return response()->json(['message' => 'Access restricted to authorized roles only.'], 403);
         }
 
-        // Retrieve unique events where the user's services are included
+        // Retrieve events where the user's services are included and ensure no duplicate event ids
         $events = DB::table('event_services_providers')
             ->join('events', 'event_services_providers.event_id', '=', 'events.id')
             ->join('services', 'event_services_providers.service_id', '=', 'services.id')
             ->where('event_services_providers.user_id', $user->id)
             ->select(
-                'events.id as event_id', 
-                'events.eventName', 
-                'events.eventDate', 
-                'events.eventLocation',
-                DB::raw('GROUP_CONCAT(services.serviceName) as service_names'), // Concatenate service names
-                'event_services_providers.package_id'
+                'events.id', // Select only event ID to ensure distinct
+                'events.*', // Select all columns from the events table
+                'services.id as service_id',
+                'services.serviceName as service_name',
+                'event_services_providers.package_id as package_id'
             )
-            ->groupBy('events.id', 'events.eventName', 'events.eventDate', 'events.eventLocation', 'event_services_providers.package_id') // Group by event details
+            ->distinct() // Ensure no duplicate event IDs
             ->get();
-
+    
         // Return the result
         return response()->json(['events' => $events], 200);
 
@@ -817,6 +816,7 @@ public function getUniqueEventsWithMyServices()
         ], 500);
     }
 }
+
 
 
     
