@@ -25,54 +25,60 @@ class PackageCreatedListener
     /**
      * Handle the event.
      */
-    public function handle(PackageCreatedEvent $event): void
-    {
-        //
-        try {
-            $package = $event->package;
+    // public function handle(PackageCreatedEvent $event): void
+    // {
+    //     //
+    //     try {
+    //         $package = $event->package;
 
-            $adminExpoToken = ExpoToken::where('user_id', 1)->pluck('token')->first();
-            if (empty($adminExpoToken)) {
-                \Log::info('No Expo token found for admin.');
-                return;
-            }
-                // Create the notification message
-                $message = (new ExpoMessage())
-                ->setTitle('New Package Created')
-                ->setBody("Package '{$package->packageName}' has been added. Price: {$package->totalPrice}")
-                ->setData(['package_id' => $package->id])
-                ->playSound();
+    //         $adminExpoToken = ExpoToken::where('user_id', 1)->pluck('token')->first();
+    //         if (empty($adminExpoToken)) {
+    //             \Log::info('No Expo token found for admin.');
+    //             return;
+    //         }
+    //             // Create the notification message
+    //             $message = (new ExpoMessage())
+    //             ->setTitle('New Package Created')
+    //             ->setBody("Package '{$package->packageName}' has been added. Price: {$package->totalPrice}")
+    //             ->setData(['package_id' => $package->id])
+    //             ->playSound();
     
-            // Send the notification to the admin
-            (new Expo)->send($message)->to([$adminExpoToken])->push();
+    //         // Send the notification to the admin
+    //         (new Expo)->send($message)->to([$adminExpoToken])->push();
 
-             // Store the notification in the database
-             Notification::create([
-                'title' => 'New Package Created',
-                'body' => "Package '{$service->packageName}' has been added. ",
+    //          // Store the notification in the database
+    //          Notification::create([
+    //             'title' => 'New Package Created',
+    //             'body' => "Package '{$service->packageName}' has been added. ",
 
-                'data' => json_encode([
-                    'package_id' => $package->id,
-                    'package_name' => $package->packageName,
-                    'eventType' => $package->eventType,
-                    'packageType' => $package->packageType,
-                    'totalPrice' => $package->totalPrice,
-                    'coverPhoto' => $package->coverPhoto,
-                    'services' => json_decode($package->services),
-                ]),
-                'user_id' => 1, // The ID of the admin receiving the notification
-            ]);
+    //             'data' => json_encode([
+    //                 'package_id' => $package->id,
+    //                 'package_name' => $package->packageName,
+    //                 'eventType' => $package->eventType,
+    //                 'packageType' => $package->packageType,
+    //                 'totalPrice' => $package->totalPrice,
+    //                 'coverPhoto' => $package->coverPhoto,
+    //                 'services' => json_decode($package->services),
+    //             ]),
+    //             'user_id' => 1, // The ID of the admin receiving the notification
+    //         ]);
 
             
-            \Log::info("Notification sent successfully to admin with token: " . $adminExpoToken);
-            $notification = new PackageCreatedNotification($event->package);
-            $event->user->notify($notification);
-        } catch (\Throwable $th) {
-            //throw $th;
-        }
+    //         \Log::info("Notification sent successfully to admin with token: " . $adminExpoToken);
+    //         $notification = new PackageCreatedNotification($event->package);
+    //         $event->user->notify($notification);
+    //     } catch (\Throwable $th) {
+    //         //throw $th;
+    //     }
 
 
-    }
+    // }
+
+    public function handle(PackageCreatedEvent $event): void
+{
+    // Immediately return null to prevent any processing or notifications
+    return;
+}
 }
         // sending notification to many channels
 //         $channels = ['expo', 'email', 'sms'];
