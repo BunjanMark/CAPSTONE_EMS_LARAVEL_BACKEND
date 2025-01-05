@@ -43,15 +43,14 @@ public function eventsByMonth($month)
 
 public function store(Request $request)
 {
-    DB::beginTransaction(); // Start the transaction
-
     try {
         // Ensure user is authenticated
         $user = Auth::user();
+        // return response()->json($user, 200);
         if (!$user) {   
             return response()->json(['message' => 'Unauthorized. Please log in.'], 401);
         }
-#FIXME: stop the whole process, it should not create another package and other releavnt functions when all the services are not available in the date mentioned 
+
         // Validate the incoming request
         $validatedData = $request->validate([
             'eventName' => 'required|string|max:255',
@@ -64,6 +63,7 @@ public function store(Request $request)
             'description' => 'required|string',
             'coverPhoto' => 'nullable|string', 
             'totalPrice' => 'nullable|numeric|min:1',
+            // 'package_id' => 'required|exists:packages,id',
             'packages' => 'nullable|array',
             'guest' => 'nullable|array',
             'guest.*.GuestName' => 'nullable|string|max:255',
@@ -92,67 +92,130 @@ public function store(Request $request)
             'location' => $validatedData['eventLocation'],
             'description' => $validatedData['description'],
             'coverPhoto' => $validatedData['coverPhoto'],
+            // 'package_id' => $validatedData['package_id'],
             'packages' => json_encode($validatedData['packages']), // Store packages as JSON
             'user_id' => $validatedData['user_id'], // Now user_id is explicitly set
         ]);
-
-        // Set event datetime
+        // In your Event model or controller when creating or updating an event
         $event->event_datetime = Carbon::parse($event->date . ' ' . $event->time);
         $event->save();
         event(new EventCreatedEvent($event));
 
-        // Initialize array for unavailable services
-        $unavailableServices = [];
-
-        // Check if services in the package are available
-        // Check if services in the package are available
-        foreach ($validatedData['packages'] as $packageId) {
-            $package = Package::find($packageId);
-            $services = json_decode($package->services, true);
-
-            foreach ($services as $serviceId) {
-                $service = Service::find($serviceId);
-
-                // Check if the service is already booked on the selected date
-                $existingBookings = DB::table('event_services_providers')
-                    ->where('service_id', $serviceId)
-                    ->whereDate('event_booked_date', '=', $event->event_datetime->format('Y-m-d'))
-                    ->count();
-
-                // Ensure events_per_day is properly validated
-                $allowedEvents = $service->events_per_day ?? 1; // Default to 1 if not set
-
-                // If bookings exceed the allowed number of events per day, mark the service as unavailable
-                if ($existingBookings >= $allowedEvents) {
-                    $unavailableServices[] = $service->serviceName;
-                }
+        if (isset($validatedData['packages']) && count($validatedData['packages']) > 0) {
+            foreach ($validatedData['packages'] as $packageId) {
+                DB::table('event_packages')->insert([
+                    'event_id' => $event->id,
+                    'package_id' => $packageId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
         }
+// Initialize array for unavailable services
+$unavailableServices = [];
 
-        // If any service is unavailable, terminate transaction and return error
-        if (count($unavailableServices) > 0) {
-            DB::rollBack(); // Rollback transaction
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Not all services in the selected package are available on the selected date.',
-                'unavailable_services' => $unavailableServices,
-            ], 400);
+// Check if services in the package are available
+foreach ($validatedData['packages'] as $packageId) {
+    $package = Package::find($packageId);
+    $services = json_decode($package->services, true);
+
+    foreach ($services as $serviceId) {
+        $service = Service::find($serviceId);
+
+        // Check if the service is already booked on the selected date and time
+        $existingBookings = DB::table('event_services_providers')
+            ->where('service_id', $serviceId)
+            ->whereDate('event_booked_date', '=', $event->event_datetime->format('Y-m-d'))
+            ->where(function ($query) use ($event) {
+                $eventStart = $event->event_datetime->format('H:i');
+                $eventEnd = $event->event_datetime->addHours(2)->format('H:i'); // Assuming 2 hours event duration
+                
+                $query->where(function ($q) use ($eventStart, $eventEnd) {
+                    $q->where('event_booked_time_start', '<', $eventEnd)
+                      ->where('event_booked_time_end', '>', $eventStart);
+                });
+            })
+            ->count();
+
+        // Ensure events_per_day is properly validated
+        $allowedEvents = $service->events_per_day ?? 1; // Default to 1 if not set
+
+        // If bookings exceed the allowed number of events per day, mark the service as unavailable
+        if ($existingBookings >= $allowedEvents) {
+            $unavailableServices[] = $service->serviceName;
         }
+    }
+}
 
-        // Add guest to the event
-        $guests = [];
-        foreach ($validatedData['guest'] as $guestData) {
-            $guest = Guest::create([
-                'event_id' => $event->id,
-                'GuestName' => $guestData['GuestName'],
-                'email' => $guestData['email'],
-                'phone' => $guestData['phone'],
-                'role' => $guestData['role'],
-            ]);
-            $guests[] = $guest;
-        }
+    // If any service is unavailable, terminate transaction and return error
+    if (count($unavailableServices) > 0) {
+        DB::rollBack(); // Rollback transaction
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Not all services in the selected package are available on the selected date.',
+            'unavailable_services' => $unavailableServices,
+        ], 400);
+    }
 
-        // Add service providers included in the package to the guest table
+
+        // Create equipment records for the event
+        // foreach ($validatedData['packages'] as $packageId) {
+        //     $package = Package::find($packageId);
+        //     $services = json_decode($package->services, true);
+        
+        //     foreach ($services as $serviceId) {
+        //         $service = Service::find($serviceId);
+        //         $equipment = Equipment::create([
+        //             'event_id' => $event->id,
+        //             'service_id' => $serviceId,
+        //             'user_id' => $service->user_id,
+        //         ]);
+        
+        //         // Fetch the AccountRole and User data
+        //         $AccountRoledata = AccountRole::where('user_id', $service->user_id)
+        //                                       ->where('role_id', 3) // Ensure the role_id is 3
+        //                                       ->first();
+                
+        //         if ($AccountRoledata) {
+        //             $equipment->account_role_id = $AccountRoledata->id;
+        //         }
+        
+        //         $equipment->save();
+        //     }
+        // }
+        // foreach ($validatedData['packages'] as $packageId) {
+        //     $package = Package::find($packageId);
+        //     $services = json_decode($package->services, true);
+        
+        //     foreach ($services as $serviceId) {
+        //         $service = Service::find($serviceId);
+        //         $AccountRoledata = AccountRole::where('user_id', $service->user_id)->first();
+        
+        //         $equipment = Equipment::create([
+        //             'event_id' => $event->id,
+        //             'service_id' => $serviceId,
+        //             'user_id' => $service->user_id,
+        //             'account_role_id' => $AccountRoledata ? $AccountRoledata->id : null,
+        //         ]);
+        //     }
+        // }
+
+       // Add guest to the event
+       $guests = [];
+       foreach ($validatedData['guest'] as $guestData) {
+           $guest = Guest::create([
+               'event_id' => $event->id,
+               'GuestName' => $guestData['GuestName'],
+               'email' => $guestData['email'],
+               'phone' => $guestData['phone'],
+               'role' => $guestData['role'],
+
+
+           ]);
+           $guests[] = $guest;
+       }
+
+        // add service providers included in the package to the guest table
         foreach ($validatedData['packages'] as $packageId) {
             $package = Package::find($packageId);
             $services = json_decode($package->services, true);
@@ -161,7 +224,17 @@ public function store(Request $request)
                 $serviceProviderData = Service::find($service);
                 $serviceProviders[] = [
                     'user_id' => $serviceProviderData->user_id,
+                    // 'id' => $serviceProviderData->id,
+                    // 'serviceName' => $serviceProviderData->serviceName,
+                    // 'serviceFeatures' => $serviceProviderData->serviceFeatures,
+                    // 'verified' => $serviceProviderData->verified,
+                    // 'basePrice' => $serviceProviderData->basePrice,
+                    // 'pax' => $serviceProviderData->pax,
+                    // 'servicePhotoURL' => $serviceProviderData->servicePhotoURL,
+                    // 'serviceCategory' => $serviceProviderData->serviceCategory,
+                    // 'availability_status' => $serviceProviderData->availability_status,
                 ];
+               
             }
 
             foreach ($serviceProviders as $serviceProvider) {
@@ -186,6 +259,8 @@ public function store(Request $request)
                     'role' => $roleName,
                 ]);
             }
+            
+            
         }
 
         foreach ($validatedData['packages'] as $packageId) {
@@ -218,19 +293,15 @@ public function store(Request $request)
             }
         }
         
-        DB::commit(); // Commit the transaction
-
         // Return the created event along with its associated package and user
         return response()->json([$event->load('package'), $user,  'guests' => Guest::where('event_id', $event->id)->get(),  "my services" => $serviceProviders], 201); // Include package in response
     } catch (\Illuminate\Validation\ValidationException $e) {
-        DB::rollBack(); // Rollback transaction
         return response()->json([
             'status' => 'error',
             'message' => 'Validation failed.',
             'errors' => $e->errors(),
         ], 422);
     } catch (\Exception $e) {
-        DB::rollBack(); // Rollback transaction
         return response()->json([
             'status' => 'error',
             'message' => $e->getMessage(),

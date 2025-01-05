@@ -83,6 +83,7 @@ public function store(Request $request)
             'verified' => 'boolean|nullable',
             'location' => 'nullable|string|max:255',
             'basePrice' => 'required|numeric|min:0',
+            'events_per_day' => 'required|integer|min:1',
             'pax' => 'required|integer|min:1',
             'requirements' => 'nullable|string',
             'availability_status' => 'boolean',
@@ -142,6 +143,7 @@ public function store(Request $request)
                 'pax' => 'sometimes|required|integer|min:1',
                 'requirements' => 'nullable|string',
                 'availability_status' => 'boolean',
+                'events_per_day' => 'integer|min:1',
             ]);
 
             $userId = $this->getUserIdFromRole(); // Get the user ID from account roles

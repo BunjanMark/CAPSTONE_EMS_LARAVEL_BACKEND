@@ -25,6 +25,7 @@ class Service extends Model
         'pax',
         'requirements',
         'availabilityStatus',
+        'events_per_day',
     ];
 
     public function packages()

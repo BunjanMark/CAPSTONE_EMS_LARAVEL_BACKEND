@@ -24,6 +24,7 @@ return new class extends Migration
             $table->integer('pax'); // Number of persons (PAX)
             $table->text('requirements')->nullable(); // Requirements, nullable
             $table->boolean('availability_status')->default(true); // Availability status, default true
+            $table->integer('events_per_day')->nullable(); // Number of events allowed per day, default to 1
             $table->string("submitted_by")->nullable(); // Submitted by, nullable
             $table->timestamp("submitted_at")->nullable(); // Submitted at, nullable
             $table->timestamps(); // Timestamps for created_at and updated_at
