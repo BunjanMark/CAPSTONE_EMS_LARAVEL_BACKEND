@@ -99,7 +99,7 @@ public function store(Request $request)
         // Set event datetime
         $event->event_datetime = Carbon::parse($event->date . ' ' . $event->time);
         $event->save();
-        event(new EventCreatedEvent($event));
+    
 
         // Initialize array for unavailable services
         $unavailableServices = [];
@@ -217,7 +217,7 @@ public function store(Request $request)
                 ]);
             }
         }
-        
+        event(new EventCreatedEvent($event));
         DB::commit(); // Commit the transaction
 
         // Return the created event along with its associated package and user

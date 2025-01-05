@@ -71,6 +71,9 @@ class PackageCreatedListener
             //throw $th;
         }
 
+
+    }
+}
         // sending notification to many channels
 //         $channels = ['expo', 'email', 'sms'];
 // foreach ($channels as $channel) {
@@ -91,5 +94,3 @@ class PackageCreatedListener
 //             break;
 //     }
 // }
-    }
-}
