@@ -100,7 +100,16 @@ public function store(Request $request)
         $event->event_datetime = Carbon::parse($event->date . ' ' . $event->time);
         $event->save();
     
-
+        if (isset($validatedData['packages']) && count($validatedData['packages']) > 0) {
+            foreach ($validatedData['packages'] as $packageId) {
+                DB::table('event_packages')->insert([
+                    'event_id' => $event->id,
+                    'package_id' => $packageId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
         // Initialize array for unavailable services
         $unavailableServices = [];
 
